@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Java Tutor - Master Java Programming</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">🤖 AI Java Tutor</h1>
+            <div class="user-info">
+                <span id="username-display">👤 <span id="username"></span></span>
+                <span id="avg-response-time" style="margin-left: 15px; color: #888; font-size: 0.9em;"></span>
+                <button id="logout-btn" class="btn btn-secondary btn-small">Logout</button>
+            </div>
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-messages">0</span>
+                    <span class="stat-label">Messages</span>
+                </div>
+                <!-- <div class="stat-item">
+                    <span class="stat-value" id="stat-messages">0</span>
+                    <span class="stat-label">Messages</span>
+                </div> -->
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-quizzes">0</span>
+                    <span class="stat-label">Quizzes</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-time">0h 0m</span>
+                    <span class="stat-label">Session Time</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-topics">0</span>
+                    <span class="stat-label">Topics</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Navigation Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="chat">💬 Chat</button>
+                <button class="tab-btn" data-tab="quiz">🧠 Quiz</button>
+                <button class="tab-btn" data-tab="dashboard">📊 Dashboard</button>
+                <button class="tab-btn" data-tab="code">💻 Code</button>
+            </div>
+
+            <!-- Chat Tab -->
+            <div class="tab-content active" id="chat-tab">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="welcome-message">
+                            <h2>👋 Welcome to AI Java Tutor!</h2>
+                            <p>I'm here to help you master Java programming. Ask me anything about:</p>
+                            <ul>
+                                <li>Java basics (variables, loops, conditionals)</li>
+                                <li>Object-Oriented Programming (classes, inheritance)</li>
+                                <li>Collections and data structures</li>
+                                <li>Exception handling</li>
+                                <li>Popular frameworks (Spring, Hibernate)</li>
+                            </ul>
+                            <p><strong>Try asking:</strong> "How do I create a class?" or "Explain inheritance"</p>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input 
+                            type="text" 
+                            id="chat-input" 
+                            placeholder="💭 Ask me anything about Java..." 
+                            autocomplete="off"
+                        >
+                        <button id="send-btn" class="btn btn-primary">Send</button>
+                        <button id="clear-btn" class="btn btn-secondary">Clear</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Tab -->
+            <div class="tab-content" id="quiz-tab">
+                <div class="quiz-container">
+                    <!-- Quiz Start Screen -->
+                    <div class="quiz-start" id="quiz-start">
+                        <h2>🎯 Test Your Java Knowledge</h2>
+                        <p>Challenge yourself with interactive quizzes on various Java topics</p>
+                        
+                        <div class="quiz-setup">
+                            <div class="form-group">
+                                <label for="quiz-topic">Select Topic:</label>
+                                <select id="quiz-topic">
+                                    <option value="Overall">Overall (Mixed Topics)</option>
+                                    <option value="Basics">Java Basics</option>
+                                    <option value="OOP">Object-Oriented Programming</option>
+                                    <option value="Advanced">Advanced Java</option>
+                                    <option value="Frameworks">Frameworks</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="quiz-questions">Number of Questions:</label>
+                                <input type="range" id="quiz-questions" min="3" max="10" value="5">
+                                <span id="quiz-questions-value">5</span>
+                            </div>
+                            
+                            <button id="start-quiz-btn" class="btn btn-primary btn-large">🚀 Start Quiz</button>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Question Screen -->
+                    <div class="quiz-question-screen" id="quiz-screen" style="display: none;">
+                        <div class="quiz-progress">
+                            <span id="quiz-progress-text">Question 1 of 5</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                        </div>
+
+                        <div class="question-card">
+                            <h3 id="question-text"></h3>
+                            <div class="options-container" id="options-container"></div>
+                        </div>
+
+                        <div class="feedback-box" id="feedback-box" style="display: none;"></div>
+
+                        <div class="quiz-actions">
+                            <button id="submit-answer-btn" class="btn btn-primary">Submit Answer</button>
+                            <button id="next-question-btn" class="btn btn-secondary" style="display: none;">Next Question</button>
+                            <button id="finish-quiz-btn" class="btn btn-success" style="display: none;">View Results</button>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Results Screen -->
+                    <div class="quiz-results" id="quiz-results" style="display: none;">
+                        <div class="results-card">
+                            <h2>🎉 Quiz Complete!</h2>
+                                <div class="score-display">
+                                    <div class="score-circle">
+                                        <span class="score-value" id="final-score">0/0</span>
+                                    </div>
+                                     <div class="score-percentage" id="final-percentage">0%</div>
+                                </div>
+                                <div class="performance-badge" id="performance-badge"></div>
+                        </div>
+                        <div class="recommendations-container" id="quiz-recommendations">
+                            <div class="loading-recommendations">
+                                <div class="spinner-small"></div>
+                                <p>Analyzing your performance...</p>
+                            </div>
+                        </div>
+                        <button id="new-quiz-btn" class="btn btn-primary btn-large">Take Another Quiz</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <!-- Replace your dashboard-tab section in index.html with this -->
+
+<!-- Dashboard Tab -->
+<div class="tab-content" id="dashboard-tab">
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div>
+                <h2>📊 Learning Dashboard</h2>
+                <p class="dashboard-subtitle">Track your progress and achievements</p>
+            </div>
+            <button class="btn-refresh" onclick="loadDashboard()">
+                <span class="refresh-icon">🔄</span> Refresh
+            </button>
+        </div>
+        
+        <!-- Overview Cards - Top Stats -->
+        <div class="overview-cards">
+            <div class="overview-card gradient-purple">
+                <div class="card-icon">💬</div>
+                <div class="card-content">
+                    <div class="card-value" id="overview-messages">0</div>
+                    <div class="card-label">Messages Sent</div>
+                </div>
+                <div class="card-trend">↑ Active</div>
+            </div>
+            
+            <div class="overview-card gradient-blue">
+                <div class="card-icon">🧠</div>
+                <div class="card-content">
+                    <div class="card-value" id="overview-quizzes">0</div>
+                    <div class="card-label">Quizzes Taken</div>
+                </div>
+                <div class="card-trend">↑ Growing</div>
+            </div>
+            
+            <div class="overview-card gradient-green">
+                <div class="card-icon">🎯</div>
+                <div class="card-content">
+                    <div class="card-value" id="overview-accuracy">0%</div>
+                    <div class="card-label">Accuracy</div>
+                </div>
+                <div class="card-trend">↑ Improving</div>
+            </div>
+            
+            <div class="overview-card gradient-orange">
+                <div class="card-icon">⚡</div>
+                <div class="card-content">
+                    <div class="card-value" id="overview-time">0h 0m</div>
+                    <div class="card-label">Study Time</div>
+                </div>
+                <div class="card-trend">↑ Consistent</div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="dashboard-grid">
+            <!-- Quiz Performance Chart -->
+            <div class="dashboard-card card-large">
+                <div class="card-header">
+                    <h3>📈 Quiz Performance</h3>
+                    <span class="card-badge">Last 10 Quizzes</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="quizPerformanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Topic Strength Radar -->
+            <div class="dashboard-card card-medium">
+                <div class="card-header">
+                    <h3>🎯 Topic Mastery</h3>
+                    <span class="card-badge">By Category</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="topicRadarChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Learning Streak -->
+            <div class="dashboard-card card-medium">
+                <div class="card-header">
+                    <h3>🔥 Learning Streak</h3>
+                    <span class="card-badge">Current</span>
+                </div>
+                <div class="streak-content">
+                    <div class="streak-number" id="streak-days">0</div>
+                    <div class="streak-label">Days</div>
+                    <div class="streak-message">Keep it up! 💪</div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="dashboard-card card-small">
+                <div class="card-header">
+                    <h3>⚡ Quick Stats</h3>
+                </div>
+                <div class="quick-stats-list">
+                    <div class="stat-row">
+                        <span class="stat-icon">📝</span>
+                        <span class="stat-text">Questions Answered</span>
+                        <span class="stat-number" id="quick-questions">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-icon">✅</span>
+                        <span class="stat-text">Correct Answers</span>
+                        <span class="stat-number" id="quick-correct">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-icon">📚</span>
+                        <span class="stat-text">Topics Covered</span>
+                        <span class="stat-number" id="quick-topics">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-icon">⏱️</span>
+                        <span class="stat-text">Avg Response</span>
+                        <span class="stat-number" id="quick-response">0ms</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="dashboard-card card-full">
+                <div class="card-header">
+                    <h3>📋 Recent Activity</h3>
+                    <span class="card-badge">Latest 5</span>
+                </div>
+                <div class="activity-timeline" id="activity-timeline">
+                    <div class="activity-item">
+                        <div class="activity-icon">💬</div>
+                        <div class="activity-content">
+                            <div class="activity-title">No recent activity</div>
+                            <div class="activity-time">Start chatting or taking quizzes!</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Achievements -->
+            <div class="dashboard-card card-medium">
+                <div class="card-header">
+                    <h3>🏆 Achievements</h3>
+                </div>
+                <div class="achievements-grid" id="achievements-grid">
+                    <div class="achievement-badge locked">
+                        <div class="badge-icon">🌟</div>
+                        <div class="badge-name">First Message</div>
+                    </div>
+                    <div class="achievement-badge locked">
+                        <div class="badge-icon">🎯</div>
+                        <div class="badge-name">Quiz Master</div>
+                    </div>
+                    <div class="achievement-badge locked">
+                        <div class="badge-icon">🔥</div>
+                        <div class="badge-name">7-Day Streak</div>
+                    </div>
+                    <div class="achievement-badge locked">
+                        <div class="badge-icon">💯</div>
+                        <div class="badge-name">Perfect Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Goals -->
+            <div class="dashboard-card card-medium">
+                <div class="card-header">
+                    <h3>🎯 Weekly Goals</h3>
+                </div>
+                <div class="goals-container">
+                    <div class="goal-item">
+                        <div class="goal-header">
+                            <span class="goal-name">💬 Chat Sessions</span>
+                            <span class="goal-progress-text" id="goal-chat-text">0/10</span>
+                        </div>
+                        <div class="goal-bar">
+                            <div class="goal-fill" id="goal-chat-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-header">
+                            <span class="goal-name">🧠 Quizzes</span>
+                            <span class="goal-progress-text" id="goal-quiz-text">0/5</span>
+                        </div>
+                        <div class="goal-bar">
+                            <div class="goal-fill" id="goal-quiz-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="goal-item">
+                        <div class="goal-header">
+                            <span class="goal-name">📚 Topics</span>
+                            <span class="goal-progress-text" id="goal-topics-text">0/8</span>
+                        </div>
+                        <div class="goal-bar">
+                            <div class="goal-fill" id="goal-topics-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this in index.html AFTER the dashboard-tab and BEFORE </main> -->
+
+<!-- Code Playground Tab -->
+<div class="tab-content" id="code-tab">
+    <div class="code-playground-container">
+        <!-- Header with controls -->
+        <div class="code-header">
+            <div class="code-title">
+                <h2>💻 Code Playground</h2>
+                <p class="code-subtitle">Write and execute Java code</p>
+            </div>
+            <div class="code-controls">
+                <select id="code-template" class="code-select">
+                    <option value="">📝 Select Template</option>
+                    <option value="hello">Hello World</option>
+                    <option value="class">Basic Class</option>
+                    <option value="scanner">User Input (Scanner)</option>
+                    <option value="array">Array Example</option>
+                    <option value="oop">OOP Example</option>
+                    <option value="exception">Exception Handling</option>
+                </select>
+                <button id="clear-code-btn" class="btn btn-secondary">
+                    🗑️ Clear
+                </button>
+                <button id="run-code-btn" class="btn btn-primary">
+                    ▶️ Run Code
+                </button>
+            </div>
+        </div>
+
+        <!-- Editor and Output Split View -->
+        <div class="code-split-view">
+            <!-- Code Editor -->
+            <div class="code-editor-section">
+    <div class="section-header">
+        <span class="section-title">📝 Editor</span>
+        <span class="section-badge" id="code-lines">0 lines</span>
+    </div>
+    <div id="monaco-editor" class="monaco-editor-container"></div>
+    
+    <!-- NEW: Input Section -->
+    <div class="code-input-section">
+        <div class="input-header">
+            <span class="input-title">📥 Input (for Scanner)</span>
+            <button id="clear-input-btn" class="btn-icon" title="Clear input">🗑️</button>
+        </div>
+        <textarea 
+            id="code-input" 
+            class="code-input-textarea" 
+            placeholder="Enter input here (one value per line)&#10;Example for Scanner:&#10;John&#10;25"
+            rows="4"
+        ></textarea>
+        <div class="input-hint">
+            💡 Provide input for Scanner.nextLine(), nextInt(), etc. (one per line)
+        </div>
+    </div>
+</div>
+
+            <!-- Output Console -->
+            <div class="code-output-section">
+                <div class="section-header">
+                    <span class="section-title">📊 Output</span>
+                    <button id="clear-output-btn" class="btn-icon" title="Clear output">🗑️</button>
+                </div>
+                <div id="code-output" class="code-output">
+                    <div class="output-placeholder">
+                        <div class="placeholder-icon">💡</div>
+                        <div class="placeholder-text">Run your code to see output here</div>
+                        <div class="placeholder-hint">Press Run Code or Ctrl+Enter</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Tips -->
+        <div class="code-tips">
+            <div class="tip-item">
+                <span class="tip-icon">💡</span>
+                <span class="tip-text">Your main class must be named <code>Main</code></span>
+            </div>
+            <div class="tip-item">
+                <span class="tip-icon">⚡</span>
+                <span class="tip-text">Code execution timeout: 10 seconds</span>
+            </div>
+            <div class="tip-item">
+                <span class="tip-icon">🔒</span>
+                <span class="tip-text">Code runs in isolated Docker container</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <p>Processing...</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+</body>
+</html>
