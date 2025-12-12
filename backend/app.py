@@ -16,6 +16,13 @@ import tempfile
 import os
 import shutil
 
+class FilteredLogger(logging.Filter):
+    def filter(self, record):
+        return "write() before start_response" not in record.getMessage()
+
+werkzeug_logger = logging.getLogger('werkzeug')
+werkzeug_logger.addFilter(FilteredLogger())
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
