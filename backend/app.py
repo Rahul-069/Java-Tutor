@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 import os
 import shutil
+from datetime import timedelta
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -29,13 +30,16 @@ app = Flask(__name__,
 CORS(app, supports_credentials=True)
 
 # Session configuration - CRITICAL FOR LOGIN TO WORK
+# Session configuration - CRITICAL FOR LOGIN TO WORK
 app.secret_key = secrets.token_hex(32)
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False  # Set True if using HTTPS
+app.config['SESSION_COOKIE_SECURE'] = False  # IMPORTANT: False for HTTP
 app.config['SESSION_COOKIE_PATH'] = '/'
+app.config['SESSION_COOKIE_DOMAIN'] = None  # Let Flask handle this automatically
 
 logger.info("✅ Session management configured")
 
@@ -56,6 +60,20 @@ active_generations = {}
 user_metrics = {}
 
 logger.info("✅ Database initialized")
+
+# ==================== SESSION DEBUGGER ====================
+
+@app.route('/api/debug/session', methods=['GET'])
+def debug_session():
+    """Debug endpoint to check session status"""
+    return jsonify({
+        'session_data': dict(session),
+        'has_username': 'username' in session,
+        'username': session.get('username', 'NOT SET'),
+        'session_id': request.cookies.get('session'),
+        'all_cookies': dict(request.cookies),
+        'headers': dict(request.headers)
+    })
 
 # ==================== HELPER FUNCTIONS ====================
 
@@ -156,30 +174,40 @@ def handle_login():
         username = data.get('username', '').strip()
         password = data.get('password', '').strip()
         
+        logger.info(f"🔐 Login attempt for user: {username}")
+        logger.info(f"📊 Session before login: {dict(session)}")
+        logger.info(f"🍪 Cookies received: {request.cookies}")
+        
         # Validate input
         if not username or not password:
             return jsonify({'error': 'Username and password are required'}), 400
         
         # Verify credentials
         if not db.verify_user(username, password):
+            logger.warning(f"❌ Invalid credentials for: {username}")
             return jsonify({'error': 'Invalid username or password'}), 401
         
         # Create session
+        session.clear()  # Clear any existing session first
         session['username'] = username
+        session.permanent = True
         session.modified = True
         
+        logger.info(f"📊 Session after login: {dict(session)}")
         logger.info(f"✅ User logged in: {username}")
         
-        return jsonify({
+        response = jsonify({
             'success': True,
             'message': 'Login successful',
             'username': username
-        }), 200
+        })
+        
+        return response, 200
         
     except Exception as e:
-        logger.error(f"❌ Login error: {str(e)}")
+        logger.error(f"❌ Login error: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
-
+    
 @app.route('/api/logout', methods=['POST'])
 def handle_logout():
     """Logout user and clear session"""
