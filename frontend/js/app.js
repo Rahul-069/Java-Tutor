@@ -1,4 +1,32 @@
 // API Configuration
+// ==================== AUTH CHECK ====================
+// Check if user is logged in when page loads
+
+(async function checkAuth() {
+    try {
+        const response = await fetch('/api/check-auth', {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (!data.authenticated) {
+            console.log('⚠️ Not authenticated, redirecting to login...');
+            window.location.href = '/login';
+            return;
+        }
+        
+        console.log('✅ Authenticated as:', data.username);
+        // Store username for display
+        window.currentUser = data.username;
+        
+    } catch (error) {
+        console.error('❌ Auth check failed:', error);
+        window.location.href = '/login';
+    }
+})();
+
+// Rest of your app.js code below...
+
 const API_BASE_URL = '/api';
 
 // WebSocket connection

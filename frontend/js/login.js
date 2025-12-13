@@ -4,15 +4,35 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Login page loaded');
     
+    // Check if already logged in
+    checkIfAlreadyLoggedIn();
+    
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const loginButton = document.getElementById('login-btn');
     const errorMessage = document.getElementById('error-message');
     
+    // Check if user is already logged in
+    async function checkIfAlreadyLoggedIn() {
+        try {
+            const response = await fetch('/api/check-auth', {
+                credentials: 'include'
+            });
+            const data = await response.json();
+            
+            if (data.authenticated) {
+                console.log('✅ Already logged in, redirecting...');
+                window.location.href = '/';
+            }
+        } catch (error) {
+            console.log('Not logged in');
+        }
+    }
+    
     // Handle form submission
     loginForm.addEventListener('submit', async function(event) {
-        event.preventDefault(); // Prevent default form submission
+        event.preventDefault();
         
         const username = usernameInput.value.trim();
         const password = passwordInput.value.trim();
@@ -52,8 +72,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Login successful!
                 console.log('✅ Login successful:', data.username);
                 
-                // Redirect to main page
-                window.location.href = '/';
+                // Small delay to ensure session cookie is set
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Verify session before redirecting
+                const authCheck = await fetch('/api/check-auth', {
+                    credentials: 'include'
+                });
+                const authData = await authCheck.json();
+                
+                if (authData.authenticated) {
+                    console.log('✅ Session verified, redirecting to dashboard...');
+                    window.location.href = '/';
+                } else {
+                    console.error('⚠️ Session not set properly');
+                    showError('Login succeeded but session failed. Please try again.');
+                    loginButton.disabled = false;
+                    loginButton.textContent = 'Login';
+                }
                 
             } else {
                 // Login failed

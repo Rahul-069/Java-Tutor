@@ -97,6 +97,9 @@ def home_page():
 @app.route('/login')
 def show_login_page():
     """Show the login page"""
+    # If already logged in, redirect to dashboard
+    if 'username' in session:
+        return redirect('/')
     return render_template('login.html')
 
 @app.route('/signup')
