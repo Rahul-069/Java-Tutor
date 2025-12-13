@@ -1,11 +1,9 @@
-// ==================== LOGIN PAGE JAVASCRIPT ====================
-// This file handles user login
-
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Login page loaded');
+    console.log('🍪 Current cookies:', document.cookie);
     
-    // Check if already logged in
-    checkIfAlreadyLoggedIn();
+    // Check session immediately
+    checkSessionDebug();
     
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
@@ -13,20 +11,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginButton = document.getElementById('login-btn');
     const errorMessage = document.getElementById('error-message');
     
-    // Check if user is already logged in
-    async function checkIfAlreadyLoggedIn() {
+    // Debug function to check session
+    async function checkSessionDebug() {
         try {
-            const response = await fetch('/api/check-auth', {
+            console.log('🔍 Checking session status...');
+            const response = await fetch('/api/debug/session', {
                 credentials: 'include'
             });
             const data = await response.json();
-            
-            if (data.authenticated) {
-                console.log('✅ Already logged in, redirecting...');
-                window.location.href = '/';
-            }
+            console.log('📊 Session debug data:', data);
         } catch (error) {
-            console.log('Not logged in');
+            console.error('❌ Debug check failed:', error);
         }
     }
     
@@ -37,62 +32,73 @@ document.addEventListener('DOMContentLoaded', function() {
         const username = usernameInput.value.trim();
         const password = passwordInput.value.trim();
         
-        // Validate inputs
         if (!username || !password) {
             showError('Please enter username and password');
             return;
         }
         
-        // Disable button while processing
         loginButton.disabled = true;
         loginButton.textContent = 'Logging in...';
         hideError();
         
         try {
-            console.log('📤 Sending login request...');
+            console.log('📤 Sending login request for user:', username);
+            console.log('🍪 Cookies before login:', document.cookie);
             
-            // Send login request to backend
             const response = await fetch('/api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                credentials: 'include', // IMPORTANT: Send cookies
+                credentials: 'include',
                 body: JSON.stringify({
                     username: username,
                     password: password
                 })
             });
             
-            console.log('📥 Login response status:', response.status);
+            console.log('📥 Response status:', response.status);
+            console.log('📥 Response headers:', [...response.headers.entries()]);
+            console.log('🍪 Cookies after login:', document.cookie);
             
             const data = await response.json();
+            console.log('📥 Response data:', data);
             
             if (response.ok && data.success) {
-                // Login successful!
-                console.log('✅ Login successful:', data.username);
+                console.log('✅ Login API returned success');
                 
-                // Small delay to ensure session cookie is set
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Wait a bit for cookie to be set
+                await new Promise(resolve => setTimeout(resolve, 200));
                 
-                // Verify session before redirecting
-                const authCheck = await fetch('/api/check-auth', {
+                console.log('🍪 Cookies after delay:', document.cookie);
+                
+                // Check session
+                console.log('🔍 Verifying session...');
+                const debugResponse = await fetch('/api/debug/session', {
                     credentials: 'include'
                 });
-                const authData = await authCheck.json();
+                const debugData = await debugResponse.json();
+                console.log('📊 Session after login:', debugData);
+                
+                // Check auth
+                const authResponse = await fetch('/api/check-auth', {
+                    credentials: 'include'
+                });
+                const authData = await authResponse.json();
+                console.log('📊 Auth check:', authData);
                 
                 if (authData.authenticated) {
-                    console.log('✅ Session verified, redirecting to dashboard...');
+                    console.log('✅ Session verified! Redirecting...');
                     window.location.href = '/';
                 } else {
-                    console.error('⚠️ Session not set properly');
-                    showError('Login succeeded but session failed. Please try again.');
+                    console.error('❌ Session NOT verified after login!');
+                    console.error('❌ This means cookies are not being saved');
+                    showError('Session failed. Check browser console for details.');
                     loginButton.disabled = false;
                     loginButton.textContent = 'Login';
                 }
                 
             } else {
-                // Login failed
                 console.error('❌ Login failed:', data.error);
                 showError(data.error || 'Login failed');
                 loginButton.disabled = false;
@@ -101,19 +107,17 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('❌ Network error:', error);
-            showError('Network error. Please check your connection.');
+            showError('Network error: ' + error.message);
             loginButton.disabled = false;
             loginButton.textContent = 'Login';
         }
     });
     
-    // Helper function to show error message
     function showError(message) {
         errorMessage.textContent = message;
         errorMessage.style.display = 'block';
     }
     
-    // Helper function to hide error message
     function hideError() {
         errorMessage.style.display = 'none';
     }
