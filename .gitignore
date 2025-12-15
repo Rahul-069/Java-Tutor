@@ -1,3 +1,22 @@
-venv/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.egg-info/
+# Database
+*.db
+*.sqlite
+# Environment variables
+.env
+# Docker
+*.tar.gz
+# IDE
+.vscode/
+.idea/
+*.swp
+# Logs
+*.log
