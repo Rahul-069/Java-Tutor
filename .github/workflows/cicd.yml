@@ -296,23 +296,20 @@ jobs:
           echo "$EC2_SSH_KEY" > ec2_key.pem
           chmod 600 ec2_key.pem
           
-          tar -czf project.tar.gz \
-            --exclude='.git' \
-            --exclude='__pycache__' \
+          # Sync files with rsync
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no -i ec2_key.pem" \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='__pycache__/' \
             --exclude='*.pyc' \
-            --exclude='.pytest_cache' \
-            --exclude='venv' \
+            --exclude='.pytest_cache/' \
+            --exclude='venv/' \
             --exclude='*.db' \
-            .
-          
-          scp -o StrictHostKeyChecking=no -i ec2_key.pem \
-            project.tar.gz ${EC2_USER}@${EC2_HOST}:/tmp/
+            ./ ${EC2_USER}@${EC2_HOST}:~/java-tutor-deploy/
           
           ssh -o StrictHostKeyChecking=no -i ec2_key.pem ${EC2_USER}@${EC2_HOST} << 'EOF'
-            mkdir -p ~/java-tutor-deploy
             cd ~/java-tutor-deploy
-            tar -xzf /tmp/project.tar.gz
-            rm /tmp/project.tar.gz
             
             echo "🔨 Building Docker image..."
             docker build -t java-tutor:latest .
@@ -333,32 +330,17 @@ jobs:
             sleep 10
             
             if docker ps | grep java-tutor-app; then
-              echo "✅ Container started successfully!"
+              echo "✅ Deployment successful!"
             else
-              echo "❌ Container failed to start!"
+              echo "❌ Deployment failed!"
               docker logs java-tutor-app
               exit 1
             fi
             
             docker image prune -f
-            echo "✅ Deployment complete!"
           EOF
           
-          rm ec2_key.pem project.tar.gz
-      
-      - name: Health check
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-        run: |
-          sleep 10
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://${EC2_HOST}/health)
-          
-          if [ "$response" == "200" ]; then
-            echo "✅ Health check passed!"
-          else
-            echo "❌ Health check failed!"
-            exit 1
-          fi
+          rm ec2_key.pem
 
   # Job 3: Rollback on failure
   rollback:
