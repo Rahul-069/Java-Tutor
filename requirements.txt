@@ -4,3 +4,6 @@ flask-socketio
 eventlet
 torch
 transformers
+pytest
+pytest-cov
+flake8
