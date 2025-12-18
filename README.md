@@ -51,7 +51,7 @@ sudo apt update
 sudo apt install docker.io nginx -y
 
 # Clone and build
-git clone https://github.com/YOUR_USERNAME/Java-Tutor.git
+git clone https://github.com/Rahul-069/Java-Tutor.git
 cd Java-Tutor
 docker build -t java-tutor-app .
 
