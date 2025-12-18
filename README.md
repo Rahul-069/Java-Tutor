@@ -13,7 +13,7 @@ An interactive Java learning platform powered by Claude AI with real-time code e
 
 - **Backend:** Python, Flask, SQLite
 - **Frontend:** HTML, CSS, JavaScript
-- **AI:** Claude API (Anthropic)
+- **AI:** DeepSeek-Coder
 - **Infrastructure:** Docker, Nginx, AWS EC2
 - **CI/CD:** GitHub Actions
 
