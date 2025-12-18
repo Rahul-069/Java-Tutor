@@ -15,6 +15,8 @@ import tempfile
 import os
 import shutil
 from datetime import timedelta
+import signal
+import sys
 
 # Hi
 
@@ -32,7 +34,6 @@ app = Flask(__name__,
 CORS(app, supports_credentials=True)
 
 # Session configuration - CRITICAL FOR LOGIN TO WORK
-# Session configuration - CRITICAL FOR LOGIN TO WORK
 app.secret_key = secrets.token_hex(32)
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True
@@ -43,7 +44,7 @@ app.config['SESSION_COOKIE_SECURE'] = False  # IMPORTANT: False for HTTP
 app.config['SESSION_COOKIE_PATH'] = '/'
 app.config['SESSION_COOKIE_DOMAIN'] = None  # Let Flask handle this automatically
 
-logger.info("✅ Session management configured")
+logger.info(" Session management configured")
 
 # Initialize SocketIO
 socketio = SocketIO(app, 
@@ -61,7 +62,7 @@ active_users = {}
 active_generations = {}
 user_metrics = {}
 
-logger.info("✅ Database initialized")
+logger.info(" Database initialized")
 
 # ==================== SESSION DEBUGGER ====================
 
@@ -91,7 +92,7 @@ def initialize_model():
     if model is None:
         logger.info("Loading AI model...")
         model = JavaTutorModel()
-        logger.info("✅ Model loaded successfully!")
+        logger.info(" Model loaded successfully!")
     return model
 
 def require_login(f):
@@ -155,7 +156,7 @@ def handle_signup():
         success = db.create_user(username, password)
         
         if success:
-            logger.info(f"✅ New user registered: {username}")
+            logger.info(f" New user registered: {username}")
             return jsonify({
                 'success': True,
                 'message': 'Account created successfully!',
@@ -165,7 +166,7 @@ def handle_signup():
             return jsonify({'error': 'Failed to create account'}), 500
         
     except Exception as e:
-        logger.error(f"❌ Signup error: {str(e)}")
+        logger.error(f" Signup error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/login', methods=['POST'])
@@ -176,9 +177,9 @@ def handle_login():
         username = data.get('username', '').strip()
         password = data.get('password', '').strip()
         
-        logger.info(f"🔐 Login attempt for user: {username}")
-        logger.info(f"📊 Session before login: {dict(session)}")
-        logger.info(f"🍪 Cookies received: {request.cookies}")
+        logger.info(f" Login attempt for user: {username}")
+        logger.info(f" Session before login: {dict(session)}")
+        logger.info(f" Cookies received: {request.cookies}")
         
         # Validate input
         if not username or not password:
@@ -186,7 +187,7 @@ def handle_login():
         
         # Verify credentials
         if not db.verify_user(username, password):
-            logger.warning(f"❌ Invalid credentials for: {username}")
+            logger.warning(f" Invalid credentials for: {username}")
             return jsonify({'error': 'Invalid username or password'}), 401
         
         # Create session
@@ -195,8 +196,8 @@ def handle_login():
         session.permanent = True
         session.modified = True
         
-        logger.info(f"📊 Session after login: {dict(session)}")
-        logger.info(f"✅ User logged in: {username}")
+        logger.info(f" Session after login: {dict(session)}")
+        logger.info(f" User logged in: {username}")
         
         response = jsonify({
             'success': True,
@@ -207,7 +208,7 @@ def handle_login():
         return response, 200
         
     except Exception as e:
-        logger.error(f"❌ Login error: {str(e)}", exc_info=True)
+        logger.error(f" Login error: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
     
 @app.route('/api/logout', methods=['POST'])
@@ -234,7 +235,7 @@ def check_if_logged_in():
 def handle_websocket_connect():
     """Handle WebSocket connection"""
     if 'username' not in session:
-        logger.warning("⚠️ Unauthorized WebSocket connection attempt")
+        logger.warning(" Unauthorized WebSocket connection attempt")
         return False  # Reject connection
     
     username = session['username']
@@ -245,7 +246,7 @@ def handle_websocket_connect():
         'connected_at': datetime.now().isoformat()
     }
     
-    logger.info(f"✅ User connected via WebSocket: {username}")
+    logger.info(f" User connected via WebSocket: {username}")
     
     emit('connected', {
         'message': 'Connected to Java Tutor AI',
@@ -259,7 +260,7 @@ def handle_chat_message(data):
     sid = request.sid
     
     if sid not in active_users:
-        logger.error(f"❌ Unauthenticated chat attempt")
+        logger.error(f" Unauthenticated chat attempt")
         emit('error', {'message': 'Not authenticated'})
         return
     
@@ -271,7 +272,7 @@ def handle_chat_message(data):
         emit('error', {'message': 'Message cannot be empty'})
         return
     
-    logger.info(f"📨 Chat from {username}: {user_message[:50]}...")
+    logger.info(f" Chat from {username}: {user_message[:50]}...")
     
     try:
         # Initialize model
@@ -288,14 +289,14 @@ def handle_chat_message(data):
         full_response = ""
         
         # Stream response token by token
-        logger.info(f"🚀 Generating AI response...")
+        logger.info(f" Generating AI response...")
         for token in tutor_model.generate_response_stream_with_stop(
             user_message, 
             conversation_history,
             stop_flag
         ):
             if stop_flag['should_stop']:
-                logger.info(f"⏹️ Generation stopped by user")
+                logger.info(f" Generation stopped by user")
                 emit('generation_stopped', {
                     'message': 'Generation stopped',
                     'partial_response': full_response
@@ -312,7 +313,7 @@ def handle_chat_message(data):
             
             socketio.sleep(0)
         
-        logger.info(f"✅ Generation complete")
+        logger.info(f" Generation complete")
         
         # Calculate metrics
         response_time = time.time() - start_time
@@ -332,10 +333,10 @@ def handle_chat_message(data):
                 'response_time': round(response_time, 3),
                 'full_response': full_response
             })
-            logger.info(f"📊 Response saved to database")
+            logger.info(f" Response saved to database")
         
     except Exception as e:
-        logger.error(f"❌ Chat error: {str(e)}", exc_info=True)
+        logger.error(f" Chat error: {str(e)}", exc_info=True)
         emit('error', {'message': f'An error occurred: {str(e)}'})
     
     finally:
@@ -355,13 +356,13 @@ def clear_chat_history():
             if username in user_metrics:
                 user_metrics[username] = MetricsTracker(database=db, username=username)
             
-            logger.info(f"✅ Chat history cleared for {username}")
+            logger.info(f" Chat history cleared for {username}")
             return jsonify({'success': True, 'message': 'Chat cleared'}), 200
         else:
             return jsonify({'success': False, 'error': 'Failed to clear'}), 500
         
     except Exception as e:
-        logger.error(f"❌ Error clearing chat: {e}")
+        logger.error(f" Error clearing chat: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/chat/history', methods=['GET'])
@@ -380,7 +381,7 @@ def get_chat_history():
         })
         
     except Exception as e:
-        logger.error(f"❌ Error getting chat history: {e}")
+        logger.error(f" Error getting chat history: {e}")
         return jsonify({'error': str(e)}), 500
 
 # ==================== QUIZ API ====================
@@ -403,7 +404,7 @@ def start_new_quiz():
             return jsonify({'error': 'Failed to start quiz'}), 400
             
     except Exception as e:
-        logger.error(f"❌ Quiz start error: {str(e)}")
+        logger.error(f" Quiz start error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/quiz/submit', methods=['POST'])
@@ -451,12 +452,12 @@ def submit_quiz_answer():
                 total_questions=final['total'],
                 correct_answers=final['score']
             )
-            logger.info(f"✅ Quiz completed: {final['score']}/{final['total']}")
+            logger.info(f" Quiz completed: {final['score']}/{final['total']}")
         
         return jsonify(result)
         
     except Exception as e:
-        logger.error(f"❌ Quiz submit error: {str(e)}")
+        logger.error(f" Quiz submit error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/quiz/recommendations', methods=['POST'])
@@ -472,7 +473,7 @@ def generate_quiz_recommendations():
         incorrect_answers = data.get('incorrect_answers', [])
         quiz_questions = data.get('questions', [])
         
-        logger.info(f"📊 Generating recommendations for {username}")
+        logger.info(f" Generating recommendations for {username}")
         
         tutor_model = initialize_model()
         
@@ -491,7 +492,7 @@ def generate_quiz_recommendations():
             recommendations_json=recommendations['recommendations']
         )
         
-        logger.info(f"✅ Recommendations generated")
+        logger.info(f" Recommendations generated")
         
         return jsonify({
             'success': True,
@@ -499,7 +500,7 @@ def generate_quiz_recommendations():
         })
         
     except Exception as e:
-        logger.error(f"❌ Error generating recommendations: {str(e)}")
+        logger.error(f" Error generating recommendations: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 # ==================== STATS & METRICS API ====================
@@ -513,7 +514,7 @@ def get_quick_stats():
         metrics = get_user_metrics(username)
         return jsonify(metrics.get_quick_stats())
     except Exception as e:
-        logger.error(f"❌ Stats error: {str(e)}")
+        logger.error(f" Stats error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/metrics', methods=['GET'])
@@ -525,7 +526,7 @@ def get_all_metrics():
         metrics = get_user_metrics(username)
         return jsonify(metrics.get_all_metrics())
     except Exception as e:
-        logger.error(f"❌ Metrics error: {str(e)}")
+        logger.error(f" Metrics error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 # ==================== CODE EXECUTION API ====================
@@ -548,7 +549,7 @@ def run_java_code():
                 'execution_time': 0
             }), 400
         
-        logger.info(f"🚀 Running code for: {username}")
+        logger.info(f" Running code for: {username}")
         
         # Create temporary directory
         temp_dir = tempfile.mkdtemp()
@@ -592,7 +593,7 @@ def run_java_code():
             output = result.stdout
             error = result.stderr
             
-            logger.info(f"✅ Code executed. Success: {success}")
+            logger.info(f" Code executed. Success: {success}")
             
             # Clean error messages
             if error:
@@ -614,7 +615,7 @@ def run_java_code():
                 logger.error(f"Failed to clean up: {e}")
     
     except subprocess.TimeoutExpired:
-        logger.warning(f"⏱️ Code execution timeout")
+        logger.warning(f" Code execution timeout")
         return jsonify({
             'success': False,
             'error': 'Execution timeout (10 seconds)',
@@ -623,7 +624,7 @@ def run_java_code():
         })
     
     except Exception as e:
-        logger.error(f"❌ Code execution error: {str(e)}")
+        logger.error(f" Code execution error: {str(e)}")
         return jsonify({
             'success': False,
             'error': f'Error: {str(e)}',
@@ -645,16 +646,14 @@ def health_check():
 # ==================== START SERVER ====================
 
 if __name__ == '__main__':
-    import signal
-    import sys
     
     def signal_handler(sig, frame):
-        print('\n🛑 Shutting down server...')
+        print('\n Shutting down server...')
         sys.exit(0)
     
     signal.signal(signal.SIGINT, signal_handler)
     
-    logger.info("🚀 Starting Flask server...")
+    logger.info(" Starting Flask server...")
     logger.info("Press Ctrl+C to stop")
     
     try:
@@ -667,5 +666,5 @@ if __name__ == '__main__':
             allow_unsafe_werkzeug=True
         )
     except KeyboardInterrupt:
-        print('\n🛑 Server stopped')
+        print('\n Server stopped')
         sys.exit(0)
