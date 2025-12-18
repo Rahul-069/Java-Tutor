@@ -82,7 +82,8 @@ Java-Tutor/
 │   ├── index.html          # Main UI
 │   ├── login.html
 │   ├── signup.html
-│   └── css/js/             # Styling and scripts
+│   └── css/             # Styling and scripts
+│   └── js/
 ├── Dockerfile
 └── requirements.txt
 ```
