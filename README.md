@@ -22,7 +22,6 @@ An interactive Java learning platform powered by Claude AI with real-time code e
 ### Prerequisites
 - Python 3.10+
 - Docker
-- Anthropic API Key
 
 ### Run Locally
 
